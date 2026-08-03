@@ -1,0 +1,33 @@
+WEATHER_CODES = {
+	0: {"label": "Clear Sky", "icon": "sunny"},
+	1: {"label": "Mainly Clear", "icon": "mostly_sunny"},
+	2: {"label": "Partly Cloudy", "icon": "partly_cloudy"},
+	3: {"label": "Overcast", "icon": "cloudy"},
+	45: {"label": "Fog", "icon": "fog"},
+	48: {"label": "Depositing Rime Fog", "icon": "fog"},
+	51: {"label": "Light Drizzle", "icon": "drizzle"},
+	53: {"label": "Moderate Drizzle", "icon": "drizzle"},
+	55: {"label": "Dense Drizzle", "icon": "drizzle"},
+	56: {"label": "Light Freezing Drizzle", "icon": "drizzle"},
+	57: {"label": "Dense Freezing Drizzle", "icon": "drizzle"},
+	61: {"label": "Slight Rain", "icon": "rain"},
+	63: {"label": "Moderate Rain", "icon": "rain"},
+	65: {"label": "Heavy Rain", "icon": "heavy_rain"},
+	66: {"label": "Light Freezing Rain", "icon": "rain"},
+	67: {"label": "Heavy Freezing Rain", "icon": "heavy_rain"},
+	71: {"label": "Slight Snow Fall", "icon": "snow"},
+	73: {"label": "Moderate Snow Fall", "icon": "snow"},
+	75: {"label": "Heavy Snow Fall", "icon": "snow"},
+	77: {"label": "Snow Grains", "icon": "snow"},
+	80: {"label": "Slight Rain Showers", "icon": "rain_showers"},
+	81: {"label": "Moderate Rain Showers", "icon": "rain_showers"},
+	82: {"label": "Violent Rain Showers", "icon": "heavy_rain"},
+	85: {"label": "Slight Snow Showers", "icon": "snow"},
+	86: {"label": "Heavy Snow Showers", "icon": "snow"},
+	95: {"label": "Thunderstorm", "icon": "thunderstorm"},
+	96: {"label": "Thunderstorm with Slight Hail", "icon": "thunderstorm_hail"},
+	99: {"label": "Thunderstorm with Heavy Hail", "icon": "thunderstorm_hail"},
+}
+
+def get_weather_info(code: int):
+	return WEATHER_CODES.get(code, {"label": "Unknown", "icon": "unknown"})

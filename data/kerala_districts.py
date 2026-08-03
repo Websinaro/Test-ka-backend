@@ -1,0 +1,16 @@
+KERALA_DISTRICTS = {
+	"thiruvananthapuram": {"lat": 8.5241, "lon": 76.9366},
+	"kollam": {"lat": 8.8932, "lon": 76.6141},
+	"pathanamthitta": {"lat": 9.2648, "lon": 76.7870},
+	"alappuzha": {"lat": 9.4981, "lon": 76.3388},
+	"kottayam": {"lat": 9.5916, "lon": 76.5222},
+	"idukki": {"lat": 9.8500, "lon": 77.1000},
+	"ernakulam": {"lat": 9.9816, "lon": 76.2999},
+	"thrissur": {"lat": 10.5276, "lon": 76.2144},
+	"palakkad": {"lat": 10.7867, "lon": 76.6548},
+	"malappuram": {"lat": 11.0510, "lon": 76.0711},
+	"kozhikode": {"lat": 11.2588, "lon": 75.7804},
+	"wayanad": {"lat": 11.6854, "lon": 76.1320},
+	"kannur": {"lat": 11.8745, "lon": 75.3704},
+	"kasaragod": {"lat": 12.4996, "lon": 74.9869},
+}
