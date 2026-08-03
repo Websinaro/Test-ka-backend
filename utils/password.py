@@ -1,34 +1,21 @@
 #======Password Validator======
-'''MUBARAK VERSION'''
 
-def passwordValidator(password):
-	has_digit=False
-	has_upper=False
-	has_lower=False
-	has_symbol=False
-	
-	if len(password)<8:
-		print("Your Password need atleast 8 characters..")
-		return False
+def passwordValidator(password: str):
+	if len(password) < 8:
+		return "Your password needs at least 8 characters."
 
-	for ch in password:
-		if ch.isdigit():
-			has_digit=True
-		elif ch.isupper():
-			has_upper=True
-		elif ch.islower():
-			has_lower=True
-		elif not ch.isalnum():
-			has_symbol=True
-			
+	has_digit = any(ch.isdigit() for ch in password)
+	has_upper = any(ch.isupper() for ch in password)
+	has_lower = any(ch.islower() for ch in password)
+	has_symbol = any(not ch.isalnum() for ch in password)
+
 	if not has_digit:
-		return "Your Password should contain Numbers!!"
+		return "Your password should contain at least one number."
 	if not has_upper:
-		return "Your password should contain Uppercase character "
+		return "Your password should contain at least one uppercase letter."
 	if not has_lower:
-		return "Your password should contain Lowercase character "
+		return "Your password should contain at least one lowercase letter."
 	if not has_symbol:
-		return "Your Password should contain symbols "
-		
-	if has_digit and has_upper and has_lower and has_symbol:
-		return "Strong Password"
+		return "Your password should contain at least one symbol (e.g. !@#$%)."
+
+	return "Strong Password"
