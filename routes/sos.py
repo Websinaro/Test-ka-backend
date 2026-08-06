@@ -27,7 +27,7 @@ def _find_protector_users(db: Session, contacts: list):
 	return matched
 
 @router.post("/sos", response_model=sos_scheme.SosOut)
-def create_sos(
+async def create_sos(
 	payload: sos_scheme.SosCreate,
 	db: Session = Depends(get_db),
 	current_user: model.User = Depends(get_current_user),
