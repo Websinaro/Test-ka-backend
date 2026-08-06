@@ -45,7 +45,7 @@ def create_alert(
 	tokens = db.query(model.DeviceToken).filter(model.DeviceToken.user_id.in_(user_ids)).all()
 	fcm_tokens = [t.fcm_token for t in tokens]
 
-	send_alert_broadcast(fcm_tokens, alert.title, alert.message, alert.severity)
+	await send_alert_broadcast(fcm_tokens, alert.title, alert.message, alert.severity)
 
 	return alert
 
