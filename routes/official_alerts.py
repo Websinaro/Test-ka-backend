@@ -13,7 +13,7 @@ from utils.timestamps import utc_now_str
 router = APIRouter()
 
 @router.post("/alerts", response_model=alert_scheme.OfficialAlertOut)
-def create_alert(
+async def create_alert(
 	payload: alert_scheme.OfficialAlertCreate,
 	db: Session = Depends(get_db),
 	current_user: model.User = Depends(require_president),
