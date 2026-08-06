@@ -7,7 +7,7 @@ from security.crypto import encrypt_payload, decrypt_payload
 
 # Paths that must stay plain JSON — Swagger/OpenAPI need to read these directly,
 # and "/" is a manual health-check people hit in a browser.
-EXCLUDED_PATHS = {"/docs", "/redoc", "/openapi.json", "/", "/app/version", "/health"}
+EXCLUDED_PATHS = {"/docs", "/redoc", "/openapi.json", "/","/app/version"}
 
 class EncryptionMiddleware(BaseHTTPMiddleware):
 	async def dispatch(self, request: Request, call_next):

@@ -5,7 +5,7 @@ from packaging.version import Version, InvalidVersion
 
 from config.config import MIN_SUPPORTED_VERSION, LATEST_VERSION, FORCE_UPDATE_MESSAGE
 
-EXEMPT_PATHS = {"/", "/docs", "/redoc", "/openapi.json", "/app/version", "/health"}
+EXEMPT_PATHS = {"/", "/docs", "/redoc", "/openapi.json", "/app/version"}
 
 class VersionCheckMiddleware(BaseHTTPMiddleware):
 	async def dispatch(self, request: Request, call_next):

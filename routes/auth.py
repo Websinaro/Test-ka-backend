@@ -9,6 +9,7 @@ from scheme import scheme
 from security.hashing import hashPass, verifyPass
 from security.jwt import create_access_token
 from security.oauth2 import get_current_user
+from config.config import PRESIDENT_ACCESS_CODE
 
 router = APIRouter()
 
@@ -22,13 +23,19 @@ def register(user: scheme.UserCreate, db: Session = Depends(get_db)):
 	if validation_result != "Strong Password":
 		raise HTTPException(status_code=400, detail=validation_result)
 
+	role = "user"
+	if user.access_code:
+		if not PRESIDENT_ACCESS_CODE or user.access_code != PRESIDENT_ACCESS_CODE:
+			raise HTTPException(status_code=400, detail="Invalid access code")
+		role = "president"
+
 	new_user = model.User(
 		name=user.name,
 		email=user.email,
 		phone=user.phone,
 		password=hashPass(user.password),
 		district=user.district,
-		role="user",
+		role=role,
 		created_time=str(datetime.utcnow())
 	)
 
@@ -36,7 +43,7 @@ def register(user: scheme.UserCreate, db: Session = Depends(get_db)):
 	db.commit()
 	db.refresh(new_user)
 	return new_user
-
+	
 @router.post("/login", response_model=scheme.Token)
 def login(form_data: scheme.LoginForm = Depends(), db: Session = Depends(get_db)):
 	user = db.query(model.User).filter(model.User.email == form_data.username).first()

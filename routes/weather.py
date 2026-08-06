@@ -1,4 +1,5 @@
-from fastapi import APIRouter, Query
+import httpx
+from fastapi import APIRouter, HTTPException, Query
 from services.weather_service import fetch_weather
 from scheme.weather_scheme import WeatherResponse
 from data.weather_codes import get_weather_info
@@ -12,7 +13,14 @@ async def get_weather(
 	lat: float = Query(..., ge=-90, le=90),
 	lon: float = Query(..., ge=-180, le=180)
 ):
-	result = await fetch_weather(lat, lon)
+	try:
+		result = await fetch_weather(lat, lon)
+	except (httpx.TimeoutException, httpx.ConnectError, httpx.HTTPStatusError):
+		raise HTTPException(
+			status_code=503,
+			detail="Weather data is temporarily unavailable. Please try again in a few seconds.",
+		)
+
 	data = result["weather"]
 	air = result["air"]
 
@@ -86,5 +94,4 @@ async def get_weather(
 		wind_speed=response["current"]["wind_speed"]
 	)
 
-	return response
 	return response

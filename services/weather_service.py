@@ -1,8 +1,26 @@
+import asyncio
 import httpx
 
 WEATHER_URL = "https://api.open-meteo.com/v1/forecast"
 AIR_QUALITY_URL = "https://air-quality-api.open-meteo.com/v1/air-quality"
 GEOCODE_URL = "https://geocoding-api.open-meteo.com/v1/reverse"
+
+async def _get_with_retry(client: httpx.AsyncClient, url: str, params: dict, attempts: int = 2):
+	"""The primary weather call is the one thing in this request that must
+	not fail silently into a bare 500 - a single dropped packet or a brief
+	Open-Meteo hiccup shouldn't surface as 'server hit an error' when a
+	near-instant retry would have worked."""
+	last_error = None
+	for attempt in range(attempts):
+		try:
+			resp = await client.get(url, params=params)
+			resp.raise_for_status()
+			return resp
+		except (httpx.TimeoutException, httpx.ConnectError, httpx.HTTPStatusError) as e:
+			last_error = e
+			if attempt < attempts - 1:
+				await asyncio.sleep(0.6)
+	raise last_error
 
 async def fetch_weather(lat: float, lon: float):
 	weather_params = {
@@ -28,9 +46,8 @@ async def fetch_weather(lat: float, lon: float):
 		"language": "en",
 	}
 
-	async with httpx.AsyncClient(timeout=10.0) as client:
-		weather_resp = await client.get(WEATHER_URL, params=weather_params)
-		weather_resp.raise_for_status()
+	async with httpx.AsyncClient(timeout=15.0) as client:
+		weather_resp = await _get_with_retry(client, WEATHER_URL, weather_params)
 
 		place_name = None
 		try:
@@ -62,6 +79,5 @@ async def fetch_current_only(lat: float, lon: float):
 		"forecast_days": 1,
 	}
 	async with httpx.AsyncClient(timeout=15.0) as client:
-		resp = await client.get(WEATHER_URL, params=params)
-		resp.raise_for_status()
+		resp = await _get_with_retry(client, WEATHER_URL, params)
 		return resp.json()

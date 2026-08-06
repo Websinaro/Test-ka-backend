@@ -1,14 +1,11 @@
 import base64
 import json
-from typing import Iterable
-
 import firebase_admin
 from firebase_admin import credentials, messaging
 
 from config.config import FIREBASE_CREDENTIALS_B64
 
 _initialized = False
-
 
 def _ensure_initialized():
 	global _initialized
@@ -20,14 +17,15 @@ def _ensure_initialized():
 	firebase_admin.initialize_app(cred)
 	_initialized = True
 
+def send_sos_push(fcm_token: str, sos_id: int, sender_name: str, latitude: float, longitude: float):
+	"""Sends a data-only message (no 'notification' block) so the client
+	app has full control over how it's displayed - required for the
+	custom high-priority sound and full-screen alert rather than a
+	default system notification."""
+	_ensure_initialized()
 
-def _build_message(token: str, sos_id: int, sender_name: str, latitude: float, longitude: float) -> messaging.Message:
-	"""Data-only message (no 'notification' block) so the client app has
-	full control over how it's displayed - required for the custom
-	high-priority sound and full-screen alert rather than a default system
-	notification."""
-	return messaging.Message(
-		token=token,
+	message = messaging.Message(
+		token=fcm_token,
 		data={
 			"type": "sos_alert",
 			"sos_id": str(sos_id),
@@ -37,47 +35,43 @@ def _build_message(token: str, sos_id: int, sender_name: str, latitude: float, l
 		},
 		android=messaging.AndroidConfig(
 			priority="high",
-			ttl=86400,
+			ttl=86400,  # 24 hours - FCM queues the message server-side while the
+			            # protector's device is offline and delivers it the
+			            # moment they reconnect, as long as it's within this TTL.
 		),
 	)
 
-
-def send_sos_push(fcm_token: str, sos_id: int, sender_name: str, latitude: float, longitude: float):
-	"""Single-token send. Kept for backwards compatibility / other callers;
-	create_sos now prefers send_sos_push_batch for multi-protector fan-out."""
-	_ensure_initialized()
 	try:
-		messaging.send(_build_message(fcm_token, sos_id, sender_name, latitude, longitude))
+		messaging.send(message)
 	except Exception as e:
 		print(f"[SOS PUSH ERROR] token={fcm_token} error={e}")
-
-
-def send_sos_push_batch(
-	fcm_tokens: Iterable[str],
-	sos_id: int,
-	sender_name: str,
-	latitude: float,
-	longitude: float,
-):
-	"""Sends the SOS push to every protector's device in one batched FCM
-	call instead of one blocking `messaging.send()` per token in a Python
-	loop. For a user with several safety contacts this used to mean the
-	request thread sat waiting on N sequential network round trips to
-	Firebase; now it's a single batch request, and it's already running as
-	a FastAPI background task so it never delays the sender's response.
-	"""
+		
+def send_alert_broadcast(fcm_tokens: list[str], title: str, message: str, severity: str):
+	"""Sends to up to 500 tokens per Firebase batch call. Data-only, same
+	pattern as SOS pushes, so the client controls display consistently."""
 	_ensure_initialized()
-	tokens = [t for t in dict.fromkeys(fcm_tokens) if t]  # de-dupe, drop empties
-	if not tokens:
+
+	if not fcm_tokens:
 		return
 
-	messages = [_build_message(token, sos_id, sender_name, latitude, longitude) for token in tokens]
+	messages = [
+		messaging.Message(
+			token=token,
+			data={
+				"type": "official_alert",
+				"title": title,
+				"body": message,
+				"severity": severity,
+			},
+			android=messaging.AndroidConfig(priority="high", ttl=86400),
+		)
+		for token in fcm_tokens
+	]
 
-	try:
-		response = messaging.send_each(messages)
-		if response.failure_count:
-			for token, result in zip(tokens, response.responses):
-				if not result.success:
-					print(f"[SOS PUSH ERROR] token={token} error={result.exception}")
-	except Exception as e:
-		print(f"[SOS PUSH BATCH ERROR] tokens={len(tokens)} error={e}")
+	# Firebase caps batch sends at 500 messages per call.
+	for i in range(0, len(messages), 500):
+		batch = messages[i:i + 500]
+		try:
+			messaging.send_each(batch)
+		except Exception as e:
+			print(f"[ALERT BROADCAST ERROR] batch={i} error={e}")
