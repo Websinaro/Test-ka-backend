@@ -1,3 +1,4 @@
+import asyncio
 import base64
 import json
 import firebase_admin
@@ -17,7 +18,24 @@ def _ensure_initialized():
 	firebase_admin.initialize_app(cred)
 	_initialized = True
 
-def send_sos_push(fcm_token: str, sos_id: int, sender_name: str, latitude: float, longitude: float):
+def _send_with_retry(message: messaging.Message, attempts: int = 3):
+	"""Google's OAuth/network handshake is most likely to hiccup right
+	after a cold start (Render free tier spins down when idle) - exactly
+	when an SOS is most likely to be the very first request in. A single
+	silent failure here means a real emergency alert never arrives."""
+	last_error = None
+	for attempt in range(attempts):
+		try:
+			messaging.send(message)
+			return
+		except Exception as e:
+			last_error = e
+			if attempt < attempts - 1:
+				import time
+				time.sleep(0.5)
+	print(f"[PUSH ERROR] failed after {attempts} attempts: {last_error}")
+
+async def send_sos_push(fcm_token: str, sos_id: int, sender_name: str, latitude: float, longitude: float):
 	"""Sends a data-only message (no 'notification' block) so the client
 	app has full control over how it's displayed - required for the
 	custom high-priority sound and full-screen alert rather than a
@@ -35,18 +53,16 @@ def send_sos_push(fcm_token: str, sos_id: int, sender_name: str, latitude: float
 		},
 		android=messaging.AndroidConfig(
 			priority="high",
-			ttl=86400,  # 24 hours - FCM queues the message server-side while the
-			            # protector's device is offline and delivers it the
-			            # moment they reconnect, as long as it's within this TTL.
+			ttl=86400,
 		),
 	)
 
-	try:
-		messaging.send(message)
-	except Exception as e:
-		print(f"[SOS PUSH ERROR] token={fcm_token} error={e}")
-		
-def send_alert_broadcast(fcm_tokens: list[str], title: str, message: str, severity: str):
+	# messaging.send() is a blocking network call - running it in a thread
+	# keeps the async event loop free to handle other requests while it's
+	# in flight, instead of freezing the whole backend.
+	await asyncio.to_thread(_send_with_retry, message)
+
+async def send_alert_broadcast(fcm_tokens: list[str], title: str, message: str, severity: str):
 	"""Sends to up to 500 tokens per Firebase batch call. Data-only, same
 	pattern as SOS pushes, so the client controls display consistently."""
 	_ensure_initialized()
@@ -68,10 +84,12 @@ def send_alert_broadcast(fcm_tokens: list[str], title: str, message: str, severi
 		for token in fcm_tokens
 	]
 
-	# Firebase caps batch sends at 500 messages per call.
-	for i in range(0, len(messages), 500):
-		batch = messages[i:i + 500]
-		try:
-			messaging.send_each(batch)
-		except Exception as e:
-			print(f"[ALERT BROADCAST ERROR] batch={i} error={e}")
+	def _send_batches():
+		for i in range(0, len(messages), 500):
+			batch = messages[i:i + 500]
+			try:
+				messaging.send_each(batch)
+			except Exception as e:
+				print(f"[ALERT BROADCAST ERROR] batch={i} error={e}")
+
+	await asyncio.to_thread(_send_batches)
