@@ -57,7 +57,7 @@ def create_sos(
 	for protector in protectors:
 		tokens = db.query(model.DeviceToken).filter(model.DeviceToken.user_id == protector.id).all()
 		for token_row in tokens:
-			send_sos_push(
+			await send_sos_push(
 				fcm_token=token_row.fcm_token,
 				sos_id=alert.id,
 				sender_name=current_user.name,
