@@ -6,6 +6,8 @@ from database.database import get_db
 from model import model
 from scheme import sos_scheme
 from security.oauth2 import get_current_user
+from utils.normalize import normalize_phone, normalize_email
+from utils.timestamps import utc_now_str
 
 router = APIRouter()
 
@@ -19,14 +21,19 @@ def add_safety_contact(
 	if count >= 5:
 		raise HTTPException(status_code=400, detail="You can add up to 5 safety contacts only.")
 
+	try:
+		normalized_phone = normalize_phone(contact.phone)
+	except ValueError as e:
+		raise HTTPException(status_code=400, detail=str(e))
+
 	new_contact = model.SafetyContact(
 		user_id=current_user.id,
 		name=contact.name,
 		relationship=contact.relationship,
-		phone=contact.phone,
-		email=contact.email,
+		phone=normalized_phone,
+		email=normalize_email(contact.email) if contact.email else None,
 		address=contact.address,
-		created_time=str(datetime.utcnow()),
+		created_time=utc_now_str(),
 	)
 	db.add(new_contact)
 	db.commit()
@@ -54,10 +61,15 @@ def update_safety_contact(
 	if not existing:
 		raise HTTPException(status_code=404, detail="Safety contact not found")
 
+	try:
+		normalized_phone = normalize_phone(contact.phone)
+	except ValueError as e:
+		raise HTTPException(status_code=400, detail=str(e))
+
 	existing.name = contact.name
 	existing.relationship = contact.relationship
-	existing.phone = contact.phone
-	existing.email = contact.email
+	existing.phone = normalized_phone
+	existing.email = normalize_email(contact.email) if contact.email else None
 	existing.address = contact.address
 	db.commit()
 	db.refresh(existing)

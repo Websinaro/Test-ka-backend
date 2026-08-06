@@ -2,6 +2,7 @@ from datetime import datetime
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 from utils.password import passwordValidator
+from utils.timestamps import utc_now_str
 
 from database.database import get_db
 from model import model
@@ -10,12 +11,19 @@ from security.hashing import hashPass, verifyPass
 from security.jwt import create_access_token
 from security.oauth2 import get_current_user
 from config.config import PRESIDENT_ACCESS_CODE
+from utils.normalize import normalize_phone, normalize_email
 
 router = APIRouter()
 
 @router.post("/register", response_model=scheme.UserOut)
 def register(user: scheme.UserCreate, db: Session = Depends(get_db)):
-	existing = db.query(model.User).filter(model.User.email == user.email).first()
+	normalized_email = normalize_email(user.email)
+	try:
+		normalized_phone = normalize_phone(user.phone)
+	except ValueError as e:
+		raise HTTPException(status_code=400, detail=str(e))
+
+	existing = db.query(model.User).filter(model.User.email == normalized_email).first()
 	if existing:
 		raise HTTPException(status_code=400, detail="Email Already Registered")
 
@@ -31,12 +39,12 @@ def register(user: scheme.UserCreate, db: Session = Depends(get_db)):
 
 	new_user = model.User(
 		name=user.name,
-		email=user.email,
-		phone=user.phone,
+		email=normalized_email,
+		phone=normalized_phone,
 		password=hashPass(user.password),
 		district=user.district,
 		role=role,
-		created_time=str(datetime.utcnow())
+		created_time=utc_now_str()
 	)
 
 	db.add(new_user)
@@ -46,7 +54,7 @@ def register(user: scheme.UserCreate, db: Session = Depends(get_db)):
 	
 @router.post("/login", response_model=scheme.Token)
 def login(form_data: scheme.LoginForm = Depends(), db: Session = Depends(get_db)):
-	user = db.query(model.User).filter(model.User.email == form_data.username).first()
+	user = db.query(model.User).filter(model.User.email == normalize_email(form_data.username)).first()
 
 	if not user or not verifyPass(form_data.password, user.password):
 		raise HTTPException(

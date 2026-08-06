@@ -8,6 +8,7 @@ from model import model
 from scheme import alert_scheme
 from security.oauth2 import get_current_user, require_president
 from services.push_service import send_alert_broadcast
+from utils.timestamps import utc_now_str
 
 router = APIRouter()
 
@@ -19,7 +20,8 @@ def create_alert(
 ):
 	expires_time = None
 	if payload.expires_in_hours:
-		expires_time = str(datetime.utcnow() + timedelta(hours=payload.expires_in_hours))
+		expires_dt = datetime.utcnow() + timedelta(hours=payload.expires_in_hours)
+		expires_time = expires_dt.strftime("%Y-%m-%d %H:%M:%S.%f")
 
 	alert = model.OfficialAlert(
 		title=payload.title,
@@ -27,7 +29,7 @@ def create_alert(
 		severity=payload.severity,
 		district=payload.district,
 		created_by=current_user.id,
-		created_time=str(datetime.utcnow()),
+		created_time=utc_now_str(),
 		expires_time=expires_time,
 	)
 	db.add(alert)
@@ -52,7 +54,7 @@ def list_alerts(
 	db: Session = Depends(get_db),
 	current_user: model.User = Depends(get_current_user),
 ):
-	now = str(datetime.utcnow())
+	now = utc_now_str()
 	query = db.query(model.OfficialAlert).filter(
 		or_(model.OfficialAlert.expires_time.is_(None), model.OfficialAlert.expires_time > now)
 	).filter(
