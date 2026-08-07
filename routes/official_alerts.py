@@ -13,7 +13,7 @@ from utils.timestamps import utc_now_str
 router = APIRouter()
 
 @router.post("/alerts", response_model=alert_scheme.OfficialAlertOut)
-async def create_alert(
+def create_alert(
 	payload: alert_scheme.OfficialAlertCreate,
 	db: Session = Depends(get_db),
 	current_user: model.User = Depends(require_president),
@@ -45,7 +45,7 @@ async def create_alert(
 	tokens = db.query(model.DeviceToken).filter(model.DeviceToken.user_id.in_(user_ids)).all()
 	fcm_tokens = [t.fcm_token for t in tokens]
 
-	await send_alert_broadcast(fcm_tokens, alert.title, alert.message, alert.severity)
+	send_alert_broadcast(fcm_tokens, alert.title, alert.message, alert.severity)
 
 	return alert
 
