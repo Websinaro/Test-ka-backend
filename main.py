@@ -3,6 +3,7 @@ from fastapi import FastAPI
 from database.database import Base, engine
 from routes import auth, weather,map as kerala_map,version
 from routes import safety_contacts, sos, device_token
+from routes import notifications, president
 from middleware.encryption_middleware import EncryptionMiddleware
 from middleware.version_middleware import VersionCheckMiddleware
 
@@ -29,6 +30,8 @@ app.include_router(version.router, tags=["Version"])
 app.include_router(safety_contacts.router, tags=["Safety Contacts"])
 app.include_router(sos.router, tags=["SOS"])
 app.include_router(device_token.router, tags=["Device Token"])
+app.include_router(notifications.router, tags=["Notifications"])
+app.include_router(president.router, tags=["President Dashboard"])
 
 @app.get("/")
 def home():

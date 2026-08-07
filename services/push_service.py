@@ -45,3 +45,31 @@ def send_sos_push(fcm_token: str, sos_id: int, sender_name: str, latitude: float
 		messaging.send(message)
 	except Exception as e:
 		print(f"[SOS PUSH ERROR] token={fcm_token} error={e}")
+
+def send_admin_alert_push(fcm_token: str, notification_id: int, title: str, body: str, severity: str, district: str | None):
+	"""Sends a president/admin broadcast alert (e.g. a state-issued SOS-style
+	warning) to a single device. Data-only, same reasoning as
+	send_sos_push - lets the client fully control how it renders and
+	whether it bypasses Do Not Disturb for high severities."""
+	_ensure_initialized()
+
+	message = messaging.Message(
+		token=fcm_token,
+		data={
+			"type": "admin_alert",
+			"notification_id": str(notification_id),
+			"title": title,
+			"body": body,
+			"severity": severity,
+			"district": district or "",
+		},
+		android=messaging.AndroidConfig(
+			priority="high",
+			ttl=86400,
+		),
+	)
+
+	try:
+		messaging.send(message)
+	except Exception as e:
+		print(f"[ADMIN ALERT PUSH ERROR] token={fcm_token} error={e}")

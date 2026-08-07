@@ -1,5 +1,5 @@
 from fastapi import Form
-from typing import Annotated
+from typing import Annotated, Optional
 from pydantic import BaseModel, EmailStr, ConfigDict
 
 class UserCreate(BaseModel):
@@ -8,6 +8,7 @@ class UserCreate(BaseModel):
 	phone: str
 	password: str
 	district: str
+	access_code: Optional[str] = None  # required to register as "president"
 
 class UserOut(BaseModel):
 	id: int

@@ -24,3 +24,13 @@ def get_current_user(token: str = Depends(oauth2_scheme),db: Session = Depends(g
 	if user is None:
 		raise credentials_exception
 	return user
+
+def require_president(current_user: model.User = Depends(get_current_user)):
+	"""Gate for president-only (admin) endpoints - the district-wide
+	dashboard and notification broadcast CRUD."""
+	if current_user.role != "president":
+		raise HTTPException(
+			status_code=status.HTTP_403_FORBIDDEN,
+			detail="This action is restricted to the President / State Coordinator.",
+		)
+	return current_user
