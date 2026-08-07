@@ -6,7 +6,6 @@ from database.database import get_db
 from model import model
 from scheme import sos_scheme
 from security.oauth2 import get_current_user
-from utils.timestamps import utc_now_str
 
 router = APIRouter()
 
@@ -20,13 +19,13 @@ def register_device_token(
 	if existing:
 		existing.user_id = current_user.id
 		existing.platform = payload.platform
-		existing.updated_time = utc_now_str()
+		existing.updated_time = str(datetime.utcnow())
 	else:
 		db.add(model.DeviceToken(
 			user_id=current_user.id,
 			fcm_token=payload.fcm_token,
 			platform=payload.platform,
-			updated_time=utc_now_str(),
+			updated_time=str(datetime.utcnow()),
 		))
 	db.commit()
 	return {"message": "Device token registered"}

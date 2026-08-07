@@ -2,7 +2,7 @@ from fastapi import FastAPI
 
 from database.database import Base, engine
 from routes import auth, weather,map as kerala_map,version
-from routes import safety_contacts, sos, device_token,official_alerts
+from routes import safety_contacts, sos, device_token
 from middleware.encryption_middleware import EncryptionMiddleware
 from middleware.version_middleware import VersionCheckMiddleware
 
@@ -29,7 +29,6 @@ app.include_router(version.router, tags=["Version"])
 app.include_router(safety_contacts.router, tags=["Safety Contacts"])
 app.include_router(sos.router, tags=["SOS"])
 app.include_router(device_token.router, tags=["Device Token"])
-app.include_router(official_alerts.router, tags=["Official Alerts"])
 
 @app.get("/")
 def home():

@@ -24,8 +24,3 @@ def get_current_user(token: str = Depends(oauth2_scheme),db: Session = Depends(g
 	if user is None:
 		raise credentials_exception
 	return user
-	
-def require_president(current_user: model.User = Depends(get_current_user)):
-	if current_user.role != "president":
-		raise HTTPException(status_code=403, detail="Only President / State Coordinator accounts can do this.")
-	return current_user

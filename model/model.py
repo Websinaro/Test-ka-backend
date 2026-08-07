@@ -48,15 +48,3 @@ class DeviceToken(Base):
 	fcm_token = Column(String(255), nullable=False, unique=True)
 	platform = Column(String(20), nullable=True)
 	updated_time = Column(String(50), nullable=False)
-	
-class OfficialAlert(Base):
-	__tablename__ = "official_alerts"
-
-	id = Column(Integer, primary_key=True, index=True)
-	title = Column(String(150), nullable=False)
-	message = Column(String(1000), nullable=False)
-	severity = Column(String(20), default="orange", nullable=False)  # yellow | orange | light_red | dark_red
-	district = Column(String(50), nullable=True)  # null = state-wide
-	created_by = Column(Integer, ForeignKey("users.id"), nullable=False)
-	created_time = Column(String(50), nullable=False)
-	expires_time = Column(String(50), nullable=True)

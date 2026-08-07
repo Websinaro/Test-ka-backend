@@ -9,7 +9,6 @@ from model import model
 from scheme import sos_scheme
 from security.oauth2 import get_current_user
 from services.push_service import send_sos_push
-from utils.timestamps import utc_now_str
 
 router = APIRouter()
 
@@ -45,7 +44,7 @@ def create_sos(
 		longitude=payload.longitude,
 		message=payload.message,
 		status="active",
-		created_time=utc_now_str(),
+		created_time=str(datetime.utcnow()),
 	)
 	db.add(alert)
 	db.commit()
@@ -121,7 +120,7 @@ def resolve_sos(
 		raise HTTPException(status_code=404, detail="SOS alert not found")
 
 	alert.status = "resolved"
-	alert.resolved_time = utc_now_str()
+	alert.resolved_time = str(datetime.utcnow())
 	db.commit()
 	db.refresh(alert)
 	return alert
