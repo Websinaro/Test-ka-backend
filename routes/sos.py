@@ -27,7 +27,7 @@ def _find_protector_users(db: Session, contacts: list):
 	return matched
 
 @router.post("/sos", response_model=sos_scheme.SosOut)
-async def create_sos(
+def create_sos(
 	payload: sos_scheme.SosCreate,
 	db: Session = Depends(get_db),
 	current_user: model.User = Depends(get_current_user),
@@ -57,7 +57,7 @@ async def create_sos(
 	for protector in protectors:
 		tokens = db.query(model.DeviceToken).filter(model.DeviceToken.user_id == protector.id).all()
 		for token_row in tokens:
-			await send_sos_push(
+			send_sos_push(
 				fcm_token=token_row.fcm_token,
 				sos_id=alert.id,
 				sender_name=current_user.name,
